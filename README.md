@@ -36,7 +36,7 @@ A secure, self-destructing note and code sharing website built with Python Flask
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/PrivateDonut/NoteFortress.git
    cd note-fortress
    ```
 
