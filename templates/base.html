@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{% block title %}Note Fortress - Secure Self-Destructing Notes{% endblock %}</title>
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Referrer-Policy" content="no-referrer">
+    
+    <!-- CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" rel="stylesheet" id="highlight-dark">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" rel="stylesheet" id="highlight-light" disabled>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="min-vh-100 d-flex flex-column">
+        <!-- Header -->
+        <header class="header-section">
+            <div class="container">
+                <nav class="navbar navbar-expand-lg">
+                    <a class="navbar-brand" href="{{ url_for('index') }}">
+                        <div class="logo">
+                            <svg width="32" height="32" viewBox="0 0 32 32" class="logo-icon">
+                                <rect width="32" height="32" rx="8" fill="currentColor"/>
+                                <path d="M16 8l6 4v8l-6 4-6-4v-8l6-4z" fill="white"/>
+                                <circle cx="16" cy="16" r="3" fill="currentColor"/>
+                            </svg>
+                            <span>Note Fortress</span>
+                        </div>
+                    </a>
+                    
+                    <div class="navbar-nav ms-auto">
+                        <button id="themeToggle" class="theme-toggle" title="Toggle theme">
+                            <span id="themeIcon">🌙</span>
+                        </button>
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow-1">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer-section">
+            <div class="container">
+                <div class="footer-content">
+                    <p class="footer-text">
+                        End-to-end encrypted notes that self-destruct. 
+                        <strong>Your privacy is protected.</strong>
+                    </p>
+                    <div class="footer-features">
+                        <span class="feature-badge">🔐 Zero Knowledge</span>
+                        <span class="feature-badge">⏰ Self-Destructing</span>
+                        <span class="feature-badge">🛡️ Open Source</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Test if highlight.js is working
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('hljs available:', typeof hljs !== 'undefined');
+            if (typeof hljs !== 'undefined') {
+                console.log('hljs version:', hljs.version);
+                console.log('hljs languages:', Object.keys(hljs.listLanguages()));
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <script src="{{ url_for('static', filename='js/crypto.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

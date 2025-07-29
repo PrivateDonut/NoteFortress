@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}View Note - Note Fortress{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div id="loadingCard" class="card bg-secondary border-0 shadow">
+            <div class="card-body text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>🔓 Decrypting Note...</h5>
+                <p class="text-muted mb-0">Please wait while we securely decrypt your note.</p>
+            </div>
+        </div>
+
+        <div id="passwordCard" class="card bg-warning text-dark border-0 shadow" style="display: none;">
+            <div class="card-body text-center py-4">
+                <h4>🔒 Password Required</h4>
+                <p class="mb-3">This note is password protected. Enter the password to view it.</p>
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="input-group mb-3">
+                            <input 
+                                type="password" 
+                                id="passwordInput" 
+                                class="form-control" 
+                                placeholder="Enter password"
+                                maxlength="100"
+                            >
+                            <button 
+                                id="submitPassword" 
+                                class="btn btn-dark" 
+                                type="button"
+                            >
+                                🔓 Decrypt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="errorCard" class="card bg-danger border-0 shadow" style="display: none;">
+            <div class="card-body text-center py-5">
+                <h4 id="errorTitle">❌ Note Not Found</h4>
+                <p id="errorMessage" class="mb-3">This note may have expired, been deleted, or the link is invalid.</p>
+                <a href="{{ url_for('index') }}" class="btn btn-light">
+                    📝 Create New Note
+                </a>
+            </div>
+        </div>
+
+        <div id="noteCard" class="card bg-secondary border-0 shadow" style="display: none;">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">🔓 Decrypted Note</h4>
+                    <small id="noteInfo" class="opacity-75"></small>
+                </div>
+                <div class="btn-group" role="group">
+                    <button 
+                        id="copyBtn" 
+                        class="btn btn-outline-light btn-sm" 
+                        title="Copy to clipboard"
+                    >
+                        📋 Copy
+                    </button>
+                    <button 
+                        id="downloadBtn" 
+                        class="btn btn-outline-light btn-sm" 
+                        title="Download as file"
+                    >
+                        💾 Download
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="noteContent" class="position-relative">
+                    <pre id="codeBlock" class="mb-0" style="display: none;"><code id="codeContent"></code></pre>
+                    <div id="textContent" class="p-4" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="card-footer bg-dark text-muted">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <small>
+                            <span id="viewCount"></span> • 
+                            <span id="createdAt"></span>
+                            <span id="burnNotice" style="display: none;"> • 🔥 This note has been burned</span>
+                        </small>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-primary btn-sm">
+                            📝 Create New Note
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="burnedCard" class="card bg-warning text-dark border-0 shadow" style="display: none;">
+            <div class="card-body text-center py-5">
+                <h4>🔥 Note Burned</h4>
+                <p class="mb-3">This note was set to be destroyed after reading and has been permanently deleted.</p>
+                <a href="{{ url_for('index') }}" class="btn btn-dark">
+                    📝 Create New Note
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-10">
+        <div class="card bg-secondary border-0">
+            <div class="card-body">
+                <h6 class="text-info mb-3">🔒 Security Notice</h6>
+                <p class="small mb-0">
+                    This note was decrypted locally in your browser using a key that never left your device. 
+                    The server only stored encrypted data and cannot read the contents of your note.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    const noteId = '{{ note_id }}';
+    const loadingCard = document.getElementById('loadingCard');
+    const passwordCard = document.getElementById('passwordCard');
+    const errorCard = document.getElementById('errorCard');
+    const noteCard = document.getElementById('noteCard');
+    const burnedCard = document.getElementById('burnedCard');
+    
+    let encryptionKey = null;
+
+    // Extract encryption key from URL fragment
+    const fragment = window.location.hash.slice(1);
+    if (!fragment) {
+        showError('No encryption key found in URL');
+        return;
+    }
+
+    try {
+        encryptionKey = await noteCrypto.importShareableKey(fragment);
+        
+        // Clear URL fragment for security
+        if (history.replaceState) {
+            history.replaceState(null, null, window.location.pathname);
+        }
+    } catch (error) {
+        showError('Invalid encryption key');
+        return;
+    }
+
+    // Function to fetch note with optional password
+    async function fetchNote(password = '') {
+        try {
+            const response = await fetch(`/api/get/${noteId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                
+                if (response.status === 401 && errorData.password_required) {
+                    loadingCard.style.display = 'none';
+                    passwordCard.style.display = 'block';
+                    setupPasswordHandler();
+                    return;
+                } else if (response.status === 401) {
+                    showAlert('Invalid password', 'danger');
+                    return;
+                } else if (response.status === 410) {
+                    showError('This note has reached its view limit and has been deleted');
+                    return;
+                } else if (response.status === 404) {
+                    showError('Note not found or expired');
+                    return;
+                }
+                
+                throw new Error(errorData.error || 'Failed to fetch note');
+            }
+
+            const data = await response.json();
+
+            // Check if note will be deleted after this view
+            if (data.will_be_deleted) {
+                loadingCard.style.display = 'none';
+                burnedCard.style.display = 'block';
+                return;
+            }
+
+            // Decrypt the content
+            const encryptedData = noteCrypto.base64ToBytes(data.content);
+            const decryptedContent = await noteCrypto.decrypt(encryptedData, encryptionKey);
+
+            // Display the note
+            displayNote(decryptedContent, data);
+
+        } catch (error) {
+            console.error('Error loading note:', error);
+            showError('Failed to load note: ' + error.message);
+        }
+    }
+
+    // Setup password input handler
+    function setupPasswordHandler() {
+        const passwordInput = document.getElementById('passwordInput');
+        const submitButton = document.getElementById('submitPassword');
+
+        const handleSubmit = () => {
+            const password = passwordInput.value.trim();
+            if (password) {
+                passwordCard.style.display = 'none';
+                loadingCard.style.display = 'block';
+                fetchNote(password);
+            }
+        };
+
+        submitButton.addEventListener('click', handleSubmit);
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleSubmit();
+            }
+        });
+
+        // Focus on password input
+        passwordInput.focus();
+    }
+
+    function showError(message) {
+        document.getElementById('errorMessage').textContent = message;
+        loadingCard.style.display = 'none';
+        errorCard.style.display = 'block';
+    }
+
+    // Start the process
+    fetchNote();
+});
+
+function displayNote(content, metadata) {
+    const loadingCard = document.getElementById('loadingCard');
+    const noteCard = document.getElementById('noteCard');
+    const codeBlock = document.getElementById('codeBlock');
+    const codeContent = document.getElementById('codeContent');
+    const textContent = document.getElementById('textContent');
+
+    // Detect if content looks like code
+    const language = detectLanguage(content);
+    console.log('Detected language:', language);
+    console.log('Content preview:', content.substring(0, 200));
+    
+    const isCode = language || content.includes('function') || content.includes('class') || 
+                   content.includes('{') || content.includes(';') || content.includes('//') ||
+                   content.includes('#') || content.includes('def ') || content.includes('import ');
+    
+    console.log('Is code detected:', isCode);
+
+    if (isCode) {
+        console.log('Setting code content for language:', language);
+        // Set the content and language class
+        codeContent.textContent = content;
+        if (language) {
+            codeContent.className = `language-${language}`;
+        } else {
+            codeContent.className = '';
+        }
+        codeBlock.style.display = 'block';
+        textContent.style.display = 'none';
+        
+        // Apply syntax highlighting
+        console.log('Code element classes before highlighting:', codeContent.className);
+        console.log('Code element content length:', codeContent.textContent.length);
+        
+        // Function to apply highlighting
+        function applyHighlighting() {
+            if (window.hljs) {
+                console.log('Applying syntax highlighting for language:', language);
+                try {
+                    // Ensure the element is properly set up
+                    if (language) {
+                        codeContent.className = `language-${language}`;
+                    }
+                    
+                    // Apply highlighting
+                    hljs.highlightElement(codeContent);
+                    console.log('Code element classes after highlighting:', codeContent.className);
+                    
+                    // Check if highlighting was applied
+                    const hasHighlighting = codeContent.innerHTML.includes('<span class="hljs-');
+                    console.log('Highlighting applied:', hasHighlighting);
+                    console.log('InnerHTML preview:', codeContent.innerHTML.substring(0, 200));
+                    
+                    if (!hasHighlighting) {
+                        console.log('Retrying highlighting with different approach...');
+                        // Try a different approach - manually apply highlighting
+                        const highlighted = hljs.highlight(content, {language: language || 'plaintext'});
+                        codeContent.innerHTML = highlighted.value;
+                        codeContent.className = highlighted.language ? `language-${highlighted.language}` : '';
+                        console.log('Manual highlighting result:', codeContent.innerHTML.substring(0, 200));
+                    }
+                } catch (error) {
+                    console.error('Error applying highlighting:', error);
+                }
+            } else {
+                console.log('hljs not available');
+            }
+        }
+        
+        // Apply highlighting with multiple attempts
+        applyHighlighting();
+        
+        // Retry after a short delay to ensure DOM is ready
+        setTimeout(applyHighlighting, 100);
+        setTimeout(applyHighlighting, 500);
+    } else {
+        textContent.innerHTML = escapeHtml(content).replace(/\n/g, '<br>');
+        textContent.style.display = 'block';
+        codeBlock.style.display = 'none';
+    }
+
+    // Update metadata
+    document.getElementById('noteInfo').textContent = 
+        `Created ${new Date(metadata.created_at).toLocaleString()}`;
+    
+    let statusText = `${metadata.view_count} view${metadata.view_count !== 1 ? 's' : ''}`;
+    
+    // Add destruction status
+    if (metadata.destruction_type === 'time') {
+        const expireTime = new Date(metadata.destruction_value * 1000);
+        const timeRemaining = expireTime - new Date();
+        
+        if (timeRemaining > 0) {
+            const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+            const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours > 0) {
+                statusText += ` • Expires in ${hours}h ${minutes}m`;
+            } else {
+                statusText += ` • Expires in ${minutes} minutes`;
+            }
+        }
+    } else if (metadata.max_views) {
+        const remaining = metadata.max_views - metadata.view_count;
+        statusText += ` • ${remaining} view${remaining !== 1 ? 's' : ''} remaining`;
+    }
+    
+    document.getElementById('viewCount').textContent = statusText;
+    document.getElementById('createdAt').textContent = 
+        `Created ${new Date(metadata.created_at).toLocaleString()}`;
+
+    if (metadata.will_be_deleted) {
+        document.getElementById('burnNotice').style.display = 'inline';
+        document.getElementById('burnNotice').textContent = ' • 🔥 This note will be deleted';
+    }
+
+    // Setup copy button
+    document.getElementById('copyBtn').addEventListener('click', function() {
+        copyToClipboard(content);
+    });
+
+    // Setup download button
+    document.getElementById('downloadBtn').addEventListener('click', function() {
+        downloadNote(content, language || 'txt');
+    });
+
+    // Show note card
+    loadingCard.style.display = 'none';
+    noteCard.style.display = 'block';
+}
+
+function detectLanguage(content) {
+    const lines = content.split('\n');
+    const firstLine = lines[0].toLowerCase();
+    const lowerContent = content.toLowerCase();
+    
+    console.log('Detecting language for content starting with:', content.substring(0, 100));
+    
+    // Shebang detection
+    if (firstLine.includes('#!/bin/bash') || firstLine.includes('#!/bin/sh')) return 'bash';
+    if (firstLine.includes('#!/usr/bin/env python') || firstLine.includes('#!/usr/bin/python')) return 'python';
+    if (firstLine.includes('#!/usr/bin/env node')) return 'javascript';
+    
+    // Language-specific keywords and syntax
+    if (lowerContent.includes('def ') || lowerContent.includes('import ') || lowerContent.includes('from ') || 
+        lowerContent.includes('elif ') || lowerContent.includes('__init__') || lowerContent.includes('cursor = conn.execute') ||
+        lowerContent.includes('class ') || lowerContent.includes('with ') || lowerContent.includes('return ')) {
+        console.log('Detected Python language');
+        return 'python';
+    }
+    
+    if (content.includes('function ') || content.includes('const ') || content.includes('let ') || 
+        content.includes('var ') || content.includes('console.log') || content.includes('document.')) return 'javascript';
+    
+    if (content.includes('<?php') || content.includes('<?=')) return 'php';
+    
+    if ((content.includes('class ') && content.includes('public ')) || content.includes('System.out.println') ||
+        content.includes('import java.') || content.includes('package ')) return 'java';
+    
+    if (content.includes('using System') || content.includes('namespace ') || content.includes('Console.WriteLine')) return 'csharp';
+    
+    if (content.includes('#include') || (content.includes('int main') && content.includes('{'))) return 'cpp';
+    
+    if (content.includes('fn main') || content.includes('use std::') || content.includes('println!')) return 'rust';
+    
+    if (content.includes('package main') || content.includes('func main') || content.includes('import "')) return 'go';
+    
+    if (content.includes('def ') && (content.includes('end') || content.includes('puts ') || content.includes('require '))) return 'ruby';
+    
+    if (lowerContent.includes('select ') || lowerContent.includes('create table') || 
+        lowerContent.includes('insert into') || lowerContent.includes('update ')) return 'sql';
+    
+    // File format detection
+    if (content.trim().startsWith('{') && content.includes('"') && content.trim().endsWith('}')) return 'json';
+    if (content.startsWith('<?xml') || content.includes('<root>') || content.includes('</')) return 'xml';
+    if (content.includes('---\n') || (content.includes('- ') && content.includes(':'))) return 'yaml';
+    
+    // Markdown detection
+    if (content.includes('# ') || content.includes('## ') || content.includes('```') || 
+        content.includes('[') && content.includes('](')) return 'markdown';
+    
+    console.log('No specific language detected');
+    return null;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function downloadNote(content, extension) {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `note-${Date.now()}.${extension}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

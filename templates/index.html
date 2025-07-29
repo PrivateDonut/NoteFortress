@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-8">
+                    <h1 class="hero-title">Share secrets securely</h1>
+                    <p class="hero-subtitle">
+                        Create encrypted, self-destructing notes that protect your sensitive information.
+                        End-to-end encrypted with zero knowledge architecture.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Form Section -->
+    <section class="form-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="main-card">
+                        <div class="card-body">
+                <form id="noteForm" class="modern-form">
+                    <div class="form-group">
+                        <textarea 
+                            id="noteContent" 
+                            class="main-textarea" 
+                            rows="12" 
+                            placeholder="Enter your secret message, code, or any sensitive text here...
+
+Everything is encrypted in your browser before being sent to the server. The server cannot read your content."
+                            maxlength="1048576"
+                            required
+                        ></textarea>
+                        <div class="textarea-info">
+                            <span class="char-count">
+                                <span id="charCount">0</span> / 1M characters
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Options Section -->
+                    <div class="options-section">
+                        <div class="row g-3">
+                            <!-- Destruction Mode -->
+                            <div class="col-md-6">
+                                <div class="option-group">
+                                    <label class="option-label">Self-Destruct Method</label>
+                                    <div class="radio-group">
+                                        <label class="radio-option">
+                                            <input type="radio" name="destructionMode" id="timeDestruction" value="time" checked>
+                                            <span class="radio-custom"></span>
+                                            <span class="radio-text">⏰ Time-based</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="destructionMode" id="viewDestruction" value="views">
+                                            <span class="radio-custom"></span>
+                                            <span class="radio-text">👁️ View-based</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Time Settings -->
+                            <div class="col-md-6">
+                                <div id="timeSettings" class="option-group">
+                                    <label for="ttlSelect" class="option-label">Expires In</label>
+                                    <select id="ttlSelect" class="modern-select">
+                                        <option value="300">5 minutes</option>
+                                        <option value="1800">30 minutes</option>
+                                        <option value="3600" selected>1 hour</option>
+                                        <option value="21600">6 hours</option>
+                                        <option value="86400">24 hours</option>
+                                        <option value="259200">3 days</option>
+                                        <option value="604800">1 week</option>
+                                    </select>
+                                </div>
+
+                                <div id="viewSettings" class="option-group" style="display: none;">
+                                    <label for="maxViews" class="option-label">Max Views</label>
+                                    <select id="maxViews" class="modern-select">
+                                        <option value="1" selected>1 view (burn after reading)</option>
+                                        <option value="2">2 views</option>
+                                        <option value="5">5 views</option>
+                                        <option value="10">10 views</option>
+                                        <option value="25">25 views</option>
+                                        <option value="50">50 views</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Protection -->
+                        <div class="option-group">
+                            <label for="notePassword" class="option-label">
+                                🔒 Password Protection (Optional)
+                            </label>
+                            <input 
+                                type="password" 
+                                id="notePassword" 
+                                class="modern-input" 
+                                placeholder="Add an extra layer of security"
+                                maxlength="100"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="submit-section">
+                        <button type="submit" class="create-button" id="createBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <circle cx="12" cy="16" r="1"></circle>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            Create Encrypted Note
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Success Result -->
+                <div id="result" class="result-section" style="display: none;">
+                    <div class="success-card">
+                        <div class="success-header">
+                            <div class="success-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20,6 9,17 4,12"></polyline>
+                                </svg>
+                            </div>
+                            <h3>Note Created Successfully!</h3>
+                            <p>Your note has been encrypted and is ready to share.</p>
+                        </div>
+                        
+                        <div class="share-section">
+                            <label class="share-label">Share this secure link:</label>
+                            <div class="share-input-group">
+                                <input 
+                                    type="text" 
+                                    id="shareUrl" 
+                                    class="share-input" 
+                                    readonly
+                                >
+                                <button 
+                                    class="copy-button" 
+                                    type="button" 
+                                    onclick="copyToClipboard(document.getElementById('shareUrl').value)"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="note-info">
+                            <div class="info-item">
+                                <span class="info-icon">⏰</span>
+                                <span>Expires: <span id="expiresAt"></span></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-icon">🔑</span>
+                                <span>Encryption key is embedded in the URL and never sent to the server</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">🔐</div>
+                            <h3>End-to-End Encrypted</h3>
+                            <p>Your notes are encrypted in your browser using AES-256-GCM before being sent to our servers.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">⏰</div>
+                            <h3>Self-Destructing</h3>
+                            <p>Notes automatically expire after a set time or number of views, ensuring your secrets don't linger.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🔑</div>
+                            <h3>Zero Knowledge</h3>
+                            <p>Encryption keys never leave your browser. Even we can't read your notes - your privacy is guaranteed.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🛡️</div>
+                            <h3>No Tracking</h3>
+                            <p>No user accounts, no IP logging, no analytics. We don't store any information about you or your usage.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">💻</div>
+                            <h3>Code Friendly</h3>
+                            <p>Automatic syntax highlighting for 15+ programming languages with proper formatting and themes.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">📱</div>
+                            <h3>Mobile Ready</h3>
+                            <p>Works perfectly on all devices with a responsive design that adapts to your screen size.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const noteContent = document.getElementById('noteContent');
+    const charCount = document.getElementById('charCount');
+    const noteForm = document.getElementById('noteForm');
+    const createBtn = document.getElementById('createBtn');
+    const result = document.getElementById('result');
+
+    // Character counter
+    noteContent.addEventListener('input', function() {
+        charCount.textContent = this.value.length.toLocaleString();
+    });
+
+    // Destruction mode toggle
+    const timeDestruction = document.getElementById('timeDestruction');
+    const viewDestruction = document.getElementById('viewDestruction');
+    const timeSettings = document.getElementById('timeSettings');
+    const viewSettings = document.getElementById('viewSettings');
+
+    timeDestruction.addEventListener('change', function() {
+        if (this.checked) {
+            timeSettings.style.display = 'block';
+            viewSettings.style.display = 'none';
+        }
+    });
+
+    viewDestruction.addEventListener('change', function() {
+        if (this.checked) {
+            timeSettings.style.display = 'none';
+            viewSettings.style.display = 'block';
+        }
+    });
+
+    // Form submission
+    noteForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const content = noteContent.value.trim();
+        if (!content) {
+            showAlert('Please enter some content', 'warning');
+            return;
+        }
+
+        createBtn.disabled = true;
+        createBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.36 0 4.51.93 6.1 2.44l-1.42 1.42A6.91 6.91 0 0 0 12 5c-3.87 0-7 3.13-7 7s3.13 7 7 7 7-3.13 7-7h-3l4-4 4 4h-3z"></path>
+            </svg>
+            Encrypting...
+        `;
+
+        try {
+            // Generate encryption key
+            const key = await noteCrypto.generateKey();
+            
+            // Encrypt the content
+            const encryptedData = await noteCrypto.encrypt(content, key);
+            const encryptedBase64 = noteCrypto.bytesToBase64(encryptedData);
+            
+            // Get destruction mode settings
+            const destructionMode = document.querySelector('input[name="destructionMode"]:checked').value;
+            const password = document.getElementById('notePassword').value.trim();
+            
+            // Prepare payload
+            const payload = {
+                content: encryptedBase64,
+                destruction_mode: destructionMode,
+                password: password,
+                csrf_token: '{{ csrf_token }}'
+            };
+
+            if (destructionMode === 'time') {
+                payload.ttl = parseInt(document.getElementById('ttlSelect').value);
+            } else {
+                payload.max_views = parseInt(document.getElementById('maxViews').value);
+            }
+
+            // Send to server
+            const response = await fetch('/api/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to create note');
+            }
+
+            const data = await response.json();
+            
+            // Generate shareable key
+            const shareableKey = await noteCrypto.generateShareableKey(key);
+            
+            // Create share URL with key fragment
+            const shareUrl = `${window.location.origin}/view/${data.note_id}#${shareableKey}`;
+            
+            // Show result
+            document.getElementById('shareUrl').value = shareUrl;
+            
+            // Update expiration info based on destruction mode
+            const expiresAt = document.getElementById('expiresAt');
+            if (data.expires_at) {
+                expiresAt.textContent = new Date(data.expires_at).toLocaleString();
+            } else if (data.max_views) {
+                expiresAt.textContent = `After ${data.max_views} view${data.max_views !== 1 ? 's' : ''}`;
+            }
+            
+            result.style.display = 'block';
+            
+            // Reset form
+            noteForm.reset();
+            charCount.textContent = '0';
+            
+            showAlert('Note created successfully! Share the URL to give access.', 'success');
+
+        } catch (error) {
+            console.error('Error creating note:', error);
+            showAlert('Error creating note: ' + error.message, 'danger');
+        } finally {
+            createBtn.disabled = false;
+            createBtn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <circle cx="12" cy="16" r="1"></circle>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Create Encrypted Note
+            `;
+        }
+    });
+});
+</script>
+{% endblock %}
