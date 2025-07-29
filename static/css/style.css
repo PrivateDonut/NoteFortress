@@ -463,6 +463,19 @@ body {
     border: 1px solid var(--border-color);
 }
 
+.feature-badge-link {
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.feature-badge-link:hover {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
 /* Code Highlighting */
 pre {
     background: var(--bg-secondary);
