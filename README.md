@@ -5,7 +5,7 @@ A secure, self-destructing note and code sharing website built with Python Flask
 ## ✨ Features
 
 - **🔐 End-to-End Encryption**: Notes are encrypted in your browser using AES-256-GCM before being sent to the server
-- **⏰ Time-Based Destruction**: Notes automatically expire and are deleted after a specified time (5 minutes to 1 week)
+- **⏰ Time-Based Destruction**: Notes automatically expire and are deleted after a specified time (5 minutes to 24 hours)
 - **👁️ View-Based Destruction**: Set notes to self-destruct after a specific number of views (1-50)
 - **🔒 Password Protection**: Optional password protection with bcrypt hashing for additional security
 - **💻 Code Syntax Highlighting**: Automatic detection and highlighting for 15+ programming languages using Highlight.js
@@ -97,7 +97,7 @@ Note Fortress features a modern, clean interface designed for security and usabi
 | `DATABASE_PATH` | SQLite database file path | `notes.db` |
 | `MAX_NOTE_SIZE` | Maximum note size in bytes | `1048576` (1MB) |
 | `DEFAULT_TTL` | Default expiration time in seconds | `3600` (1 hour) |
-| `MAX_TTL` | Maximum allowed expiration time | `604800` (1 week) |
+| `MAX_TTL` | Maximum allowed expiration time | `86400` (24 hours) |
 | `RATE_LIMIT` | Rate limit per minute per IP | `10` |
 | `HTTPS_ONLY` | Enforce HTTPS redirects | `false` |
 

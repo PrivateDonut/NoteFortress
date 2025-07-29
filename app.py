@@ -35,7 +35,7 @@ limiter.init_app(app)
 # Configuration
 MAX_NOTE_SIZE = int(os.getenv('MAX_NOTE_SIZE', 1048576))  # 1MB
 DEFAULT_TTL = int(os.getenv('DEFAULT_TTL', 3600))  # 1 hour
-MAX_TTL = int(os.getenv('MAX_TTL', 604800))  # 1 week
+MAX_TTL = int(os.getenv('MAX_TTL', 86400))  # 24 hours
 HTTPS_ONLY = os.getenv('HTTPS_ONLY', 'false').lower() == 'true'
 
 def cleanup_expired_notes():
